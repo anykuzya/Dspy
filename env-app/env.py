@@ -17,7 +17,6 @@ app = Flask(__name__)
 message_counter = 0
 known_execs = set()
 queues = {}
-to_be_delivered = []
 
 @app.route("/messages", methods=['POST'])
 def addMessage():
@@ -58,21 +57,18 @@ def deliverMessage(msg, sender, reciever):
 @app.route("/messages/deliver/<n>", methods=['POST'])
 def deliverN(n):
     n = int(n)
-    while True:
-        if len(to_be_delivered) >= n:
-            break
+    while n > 0:
+        earliest_counter = message_counter
+        earliest_msg = {}
         for key in queues:
             q = queues[key]
-            if q:
-                heappush(to_be_delivered, q.popleft())
-
-    for msg in to_be_delivered:
-        if n == 0:
-            break
-        data = msg[1]
-        deliverMessage(data["payload"], data["from"], data["to"])
+            msg = dq_at(q, 0)
+            if msg and earliest_counter > msg[0]:
+                earliest_counter = msg[0]
+                earliest_msg = msg[1]
+        deliverMessage(earliest_msg["payload"], earliest_msg["from"], earliest_msg["to"])
         n -= 1
-
+    return "200"
 
 if __name__ == '__main__':
     app.run()
