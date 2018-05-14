@@ -5,18 +5,22 @@ class Network_manager:
     def __init__(self):
         with open("config.json") as config_file:
             config = json.load(config_file)
+
+
+            addresses = config["executors"]
+            n = len(addresses)
+
             self.executors = {}
-            for address in config["executors"]:
-                executor = Lamport_mutex(self)
-                self.executors[executor] = address
+            for i in range(n):
+                executor = Lamport_mutex(self, i, n)
+                self.executors[executor] = addresses[i]
 
-    def send(self, executor, message):
-        print(message)
-        print(self.executors[executor])
-
-
-    def test(self):
+    # there is a dummy implementation without real network usage and thread per executor
+    # it'll be modified later, step-by-step
+    def send(self, executor, message, reciever="all"):
         for e in self.executors:
             address = self.executors[e]
-            e.recieve(json.JSONEncoder().encode({"hi": "hello", "address": address}))
-            e.test()
+            if address == reciever or reciever == "all":
+                e.receive(message)
+        print(message)
+        print("from", self.executors[executor])
