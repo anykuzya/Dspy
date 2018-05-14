@@ -1,4 +1,5 @@
 from queue import Queue
+import json
 
 # from threading import Thread
 
@@ -6,7 +7,7 @@ REQUEST = "request"
 RELEASE = "release"
 ACK = "ack"
 
-class Lamport_mutex:
+class LamportMutex:
     def __init__(self, network_manager, n, id):
         self.id = id
         self.tick = 0
@@ -18,33 +19,63 @@ class Lamport_mutex:
         self.is_granted = False
 
     def do_request(self):
-        pass
+        self.tick += 1
+        message = json.JSONEncoder.encode({"time": self.tick, "from": self.id, "type": REQUEST})
+        self.put_to_request_queue(message)
+        self.send(message)
+        self.waiting_acknowledgments_from = {id for id in self.ids}
+        # wait for acknowledges and our mes is first in reqQueue
+        while (not (len(self.waiting_acknowledgments_from) == 0
+               and self.is_granted == False
+               and self.requests_queue[0] == self.id)):
+            self.handle_message()
+        self.waiting_acknowledgments_from = None
+        self.is_granted = True
 
     def do_release(self):
-        pass
+        self.tick += 1
+        message = json.JSONEncoder.encode({"time": self.tick, "from": self.id, "type": RELEASE})
+        self.delete_from_requests_queue(self.id)
+        self.is_granted = False
+        self.send(message)
 
     def handle_request(self, message):
-        pass
+        self.put_to_request_queue(message["from"])
+        self.tick = max(self.tick, message["time"]) + 1
+        answer = json.JSONEncoder.encode({"time": self.tick, "from": self.id, "type": ACK})
+        self.send(answer, message["from"])
 
     def handle_release(self, message):
-        pass
+        self.delete_from_requests_queue(message["from"])
+        self.tick = max(self.tick, message["time"]) + 1
 
     def handle_ack(self, message):
-        pass
+        self.waiting_acknowledgments_from.remove(message["from"])
 
-    def handle_message(self, message):
+    def handle_message(self):
+        message = self.messages_queue.get()
         if message["type"] == REQUEST:
             self.handle_request(message)
         elif message["type"] == RELEASE:
             self.handle_release(message)
         elif message["type"] == ACK:
             self.handle_ack(message)
+        self.messages_queue.task_done()
+
+    def put_to_request_queue(self, id):
+        pass
+
+    def delete_from_requests_queue(self, id):
+        pass
 
     def receive(self, message):
-        self.handle_message(message)
+        self.messages_queue.put(message)
 
-    def send_to_all(self, message):
-        self.network_manager.send(self, message)
-
-    def send_to_one(self, message, to):
-        self.network_manager.send(self, message, to)
+    def send(self, message, to="all"):
+        if to == "all":
+            for id in self.ids:
+                if id != self.id:
+                    # self.send_to_one(message, id)
+                    self.network_manager.send(self, message, id)
+        else:
+            self.network_manager.send(self, message, to)

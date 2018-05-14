@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from network_manager import Network_manager
+from network_manager import NetworkManager
 
 if __name__ == '__main__':
-    nm = Network_manager()
+    nm = NetworkManager()

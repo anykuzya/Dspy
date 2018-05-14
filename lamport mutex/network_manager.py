@@ -1,26 +1,17 @@
 import json
-from LM import Lamport_mutex
+from LM import LamportMutex
 
-class Network_manager:
+
+class NetworkManager:
     def __init__(self):
         with open("config.json") as config_file:
             config = json.load(config_file)
+            self.addresses = config["executors"]
 
-
-            addresses = config["executors"]
-            n = len(addresses)
-
-            self.executors = {}
-            for i in range(n):
-                executor = Lamport_mutex(self, i, n)
-                self.executors[executor] = addresses[i]
+        n = len(self.addresses)
+        self.executors = [LamportMutex(self, n, i) for i in range(n)]
 
     # there is a dummy implementation without real network usage and thread per executor
     # it'll be modified later, step-by-step
-    def send(self, executor, message, reciever="all"):
-        for e in self.executors:
-            address = self.executors[e]
-            if address == reciever or reciever == "all":
-                e.receive(message)
-        print(message)
-        print("from", self.executors[executor])
+    def send(self, message, receiver):
+        self.executors[receiver].recieve(message)
