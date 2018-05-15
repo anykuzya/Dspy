@@ -14,4 +14,4 @@ class NetworkManager:
     # there is a dummy implementation without real network usage and thread per executor
     # it'll be modified later, step-by-step
     def send(self, message, receiver):
-        self.executors[receiver].recieve(message)
+        self.executors[receiver].receive(message)

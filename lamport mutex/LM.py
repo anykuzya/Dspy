@@ -1,5 +1,6 @@
 from queue import Queue
 import json
+from _heapq import heappush
 
 # from threading import Thread
 
@@ -20,14 +21,14 @@ class LamportMutex:
 
     def do_request(self):
         self.tick += 1
-        message = json.JSONEncoder.encode({"time": self.tick, "from": self.id, "type": REQUEST})
-        self.put_to_request_queue(message)
+        message = json.JSONEncoder().encode({"time": self.tick, "from": self.id, "type": REQUEST})
+        self.put_to_request_queue(self.tick, self.id)
         self.send(message)
         self.waiting_acknowledgments_from = {id for id in self.ids}
         # wait for acknowledges and our mes is first in reqQueue
         while (not (len(self.waiting_acknowledgments_from) == 0
                and self.is_granted == False
-               and self.requests_queue[0] == self.id)):
+               and self.requests_queue[0][1] == self.id)):
             self.handle_message()
         self.waiting_acknowledgments_from = None
         self.is_granted = True
@@ -40,7 +41,7 @@ class LamportMutex:
         self.send(message)
 
     def handle_request(self, message):
-        self.put_to_request_queue(message["from"])
+        self.put_to_request_queue(message["time"], message["from"])
         self.tick = max(self.tick, message["time"]) + 1
         answer = json.JSONEncoder.encode({"time": self.tick, "from": self.id, "type": ACK})
         self.send(answer, message["from"])
@@ -53,6 +54,8 @@ class LamportMutex:
         self.waiting_acknowledgments_from.remove(message["from"])
 
     def handle_message(self):
+        if self.messages_queue.empty():
+            return
         message = self.messages_queue.get()
         if message["type"] == REQUEST:
             self.handle_request(message)
@@ -62,11 +65,13 @@ class LamportMutex:
             self.handle_ack(message)
         self.messages_queue.task_done()
 
-    def put_to_request_queue(self, id):
-        pass
+    def put_to_request_queue(self, time, id):
+        heappush(self.requests_queue, [time, id])
 
     def delete_from_requests_queue(self, id):
-        pass
+        for time, rid in self.requests_queue:
+            if rid == id:
+                self.requests_queue.remove([time, rid])
 
     def receive(self, message):
         self.messages_queue.put(message)
@@ -76,6 +81,6 @@ class LamportMutex:
             for id in self.ids:
                 if id != self.id:
                     # self.send_to_one(message, id)
-                    self.network_manager.send(self, message, id)
+                    self.network_manager.send(message, id)
         else:
             self.network_manager.send(self, message, to)
