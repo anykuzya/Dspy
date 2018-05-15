@@ -20,6 +20,10 @@ class LamportMutex:
         self.is_granted = False
 
     def do_request(self):
+        if self.is_granted:
+            print("lock has been acquired already")
+            return
+
         self.tick += 1
         message = json.JSONEncoder().encode({"time": self.tick, "from": self.id, "type": REQUEST})
         self.put_to_request_queue(self.tick, self.id)
@@ -34,6 +38,10 @@ class LamportMutex:
         self.is_granted = True
 
     def do_release(self):
+        if not self.is_granted:
+            print("lock hasn't been acquired yet")
+            return
+
         self.tick += 1
         message = json.JSONEncoder.encode({"time": self.tick, "from": self.id, "type": RELEASE})
         self.delete_from_requests_queue(self.id)
