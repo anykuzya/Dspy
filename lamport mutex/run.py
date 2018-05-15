@@ -41,7 +41,7 @@ class NetworkManager:
 
     def send(self, message, receiver):
         url = self.addresses[receiver]
-        requests.post(url, message)
+        requests.post(url, json=message)
 
 if __name__ == '__main__':
     id = sys.argv[1]

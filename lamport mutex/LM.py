@@ -1,7 +1,7 @@
 from queue import Queue
 import json
 from _heapq import heappush
-
+from threading import Thread
 # from threading import Thread
 
 REQUEST = "request"
@@ -19,13 +19,20 @@ class LamportMutex:
         self.waiting_acknowledgments_from = []
         self.is_granted = False
 
+        def handle_messages_loop():
+            while True:
+                self.handle_message()
+        t = Thread(target=handle_messages_loop)
+        t.setDaemon(True)
+        t.start()
+
     def do_request(self):
         if self.is_granted:
             print("lock has been acquired already")
             return
 
         self.tick += 1
-        message = json.JSONEncoder().encode({"time": self.tick, "from": self.id, "type": REQUEST})
+        message = {"time": self.tick, "from": self.id, "type": REQUEST}
         self.put_to_request_queue(self.tick, self.id)
         self.send(message)
         self.waiting_acknowledgments_from = {id for id in self.ids}
@@ -43,7 +50,7 @@ class LamportMutex:
             return
 
         self.tick += 1
-        message = json.JSONEncoder.encode({"time": self.tick, "from": self.id, "type": RELEASE})
+        message = {"time": self.tick, "from": self.id, "type": RELEASE}
         self.delete_from_requests_queue(self.id)
         self.is_granted = False
         self.send(message)
@@ -51,7 +58,7 @@ class LamportMutex:
     def handle_request(self, message):
         self.put_to_request_queue(message["time"], message["from"])
         self.tick = max(self.tick, message["time"]) + 1
-        answer = json.JSONEncoder.encode({"time": self.tick, "from": self.id, "type": ACK})
+        answer = {"time": self.tick, "from": self.id, "type": ACK}
         self.send(answer, message["from"])
 
     def handle_release(self, message):
@@ -62,8 +69,6 @@ class LamportMutex:
         self.waiting_acknowledgments_from.remove(message["from"])
 
     def handle_message(self):
-        if self.messages_queue.empty():
-            return
         message = self.messages_queue.get()
         if message["type"] == REQUEST:
             self.handle_request(message)
@@ -91,4 +96,4 @@ class LamportMutex:
                     # self.send_to_one(message, id)
                     self.network_manager.send(message, id)
         else:
-            self.network_manager.send(self, message, to)
+            self.network_manager.send(message, to)
