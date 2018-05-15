@@ -1,19 +1,8 @@
 from collections import deque
 import requests
-import http.client
-from heapq import heappush
 from flask import Flask, request
 app = Flask(__name__)
 
-"""
-Что нужно сделать:
-    * добавить глобальный счетчик, чтобы по нему упорядочивать все сообщения, которые нас попросили доставить
-    * добавить переменную, в которой хранить очереди сообщений. Хранить как словарь (from, to) -> <очередь сообщений>
-    * написать код, котодый будет в addMessage: парсить пришедший json,
-        * заводить, при необходимости, очереди, с его участием (участием его адресата)
-        * класть сообщение в очередь 
-    * погуглить, как отправлять http в python
-"""
 message_counter = 0
 known_execs = set()
 queues = {}
@@ -38,10 +27,6 @@ def addMessage():
 @app.route("/messages", methods=['GET'])
 def getMessages():
     pass
-
-# @app.route("/messages/<id>/deliver", methods=['POST'])
-# def deliverOne(id):
-#     pass
 
 def dq_at(dq, i):
     for e in dq:
