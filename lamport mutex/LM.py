@@ -40,9 +40,11 @@ class LamportMutex:
         while (not (len(self.waiting_acknowledgments_from) == 0
                and self.is_granted == False
                and self.requests_queue[0][1] == self.id)):
-            self.handle_message()
+            pass
+            # self.handle_message()
         self.waiting_acknowledgments_from = None
         self.is_granted = True
+        print("you have been granted with the resource at", self.tick)
 
     def do_release(self):
         if not self.is_granted:
@@ -54,6 +56,8 @@ class LamportMutex:
         self.delete_from_requests_queue(self.id)
         self.is_granted = False
         self.send(message)
+        print("you have released the resource at", self.tick)
+
 
     def handle_request(self, message):
         self.put_to_request_queue(message["time"], message["from"])
