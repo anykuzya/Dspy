@@ -97,7 +97,6 @@ class LamportMutex:
         if to == "all":
             for id in self.ids:
                 if id != self.id:
-                    # self.send_to_one(message, id)
-                    self.network_manager.send(message, id)
+                    self.network_manager.send(message, self.id, id)
         else:
-            self.network_manager.send(message, to)
+            self.network_manager.send(message, self.id, to)

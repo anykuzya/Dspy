@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Dspy</title>
+</head>
+<body>
+<div id="queue">
+        <div v-for="pair in responce">
+            {{pair["from"]}} <==> {{pair["to"]}}
+            <p v-for="msg in pair.messages">
+                id: {{msg[0]}},
+                msg: {{msg[1]["payload"]}}
+            </p>
+        </div>
+        <p>
+            <input type="button" @click="deliver" value="deliver">
+        </p>
+</div>
+</body>
+
+<script src="https://cdn.jsdelivr.net/npm/vue"></script>
+<script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+<script>
+const queue = new Vue({
+    el: "#queue",
+    data: {
+        responce: []
+    },
+    created() {
+        axios.get("/messages")
+            .then(this._onResponce)
+            .catch(error => {
+                        console.log("Error occurred ", error);
+                        alert(error.message);
+                    })
+    },
+    methods: {
+        _onResponce({data: {responce, error}}) {
+            if (error) {
+                alert(error);
+                return;
+            }
+            this.responce = responce;
+        },
+
+        deliver() {
+            axios.post("/messages/deliver/10")
+                .then(this._onResponce)
+                .catch(error => {
+                        console.log("Error occurred ", error);
+                        alert(error.message);
+                    })
+        }
+    }
+})
+</script>
+</html>

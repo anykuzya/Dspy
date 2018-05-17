@@ -1,6 +1,7 @@
 from collections import deque
 import requests
-from flask import Flask, request
+from flask import Flask, request, send_file, jsonify
+
 app = Flask(__name__)
 
 message_counter = 0
@@ -23,10 +24,14 @@ def addMessage():
     message_counter += 1
     return "200"
 
+@app.route("/")
+def main_page():
+    return send_file('index.html')
 
 @app.route("/messages", methods=['GET'])
 def getMessages():
-    pass
+    messages = [{"from": x[0], "to": x[1], "messages": list(queues[x])} for x in queues]
+    return jsonify({"responce": messages})
 
 def dq_at(dq, i):
     for e in dq:
@@ -53,7 +58,7 @@ def deliverN(n):
                 earliest_msg = msg[1]
         deliverMessage(earliest_msg["payload"], earliest_msg["from"], earliest_msg["to"])
         n -= 1
-    return "200"
+    return getMessages()
 
 if __name__ == '__main__':
     app.run()

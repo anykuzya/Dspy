@@ -28,6 +28,7 @@ class NetworkManager:
             config = json.load(config_file)
             ports = config["executors"]
             port = ports[id]
+            self.env_address = config["environment"]
             self.addresses = [host_prefix + p for p in ports]
         def run_listener():
             app.run("localhost", int(port))
@@ -39,9 +40,14 @@ class NetworkManager:
         n = len(self.addresses)
         self.executor = LamportMutex(self, n, id)
 
-    def send(self, message, receiver):
-        url = self.addresses[receiver]
-        requests.post(url, json=message)
+    def send(self, message, sender, receiver):
+        # url = self.addresses[receiver]
+        wrapped_message = {
+            "from": self.addresses[sender],
+            "to"  : self.addresses[receiver],
+         "payload": message
+        }
+        requests.post(self.env_address+"messages", json=wrapped_message)
 
 if __name__ == '__main__':
     id = sys.argv[1]
