@@ -43,10 +43,16 @@ const queue = new Vue({
             }
             this.responce = responce;
         },
+        _onDelivered({data: {answer, error}}) {
+            if (error) {
+                alert(error);
+                return;
+            }
 
+        },
         deliver() {
             axios.post("/messages/deliver/10")
-                .then(this._onResponce)
+                .then(this._onDelivered)
                 .catch(error => {
                         console.log("Error occurred ", error);
                         alert(error.message);
