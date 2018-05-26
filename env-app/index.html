@@ -15,9 +15,9 @@
             </p>
         </div>
         <p v-if="show_deliver_response">
-            delivered: {{deliver_response}}
+            {{deliver_response}}
         </p>
-        <p>
+            <input type="text" v-model="n_for_deliver">
             <input type="button" @click="deliver" value="deliver">
         </p>
         <p>
@@ -34,7 +34,8 @@ const queue = new Vue({
     data: {
         messages: [],
         show_deliver_response: false,
-        deliver_response: ""
+        deliver_response: "",
+        n_for_deliver: 10
     },
     created() {
         this.refresh()
@@ -45,6 +46,7 @@ const queue = new Vue({
                 alert(error);
                 return;
             }
+            this.show_deliver_response = false;
             this.messages = messages;
         },
         _onDelivered({data: {messages, delivered, error}}) {
@@ -73,7 +75,15 @@ const queue = new Vue({
                     })
         },
         deliver() {
-            axios.post("/messages/deliver/10")
+            axios.post("/messages/deliver/" + this.n_for_deliver)
+                .then(this._onDelivered)
+                .catch(error => {
+                        console.log("Error occurred ", error);
+                        alert(error.message);
+                    })
+        },
+        deliver_one(id) {
+            axios.post("/messages/deliver/" + id)
                 .then(this._onDelivered)
                 .catch(error => {
                         console.log("Error occurred ", error);

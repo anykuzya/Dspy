@@ -68,14 +68,15 @@ def findById(id):
             if res is not None:
                 return res, key
 
-    print("no message with" + id)
+    print("no message with {}".format(id))
     return None, None
 
 
 @app.route("/messages/deliver/<n>", methods=['POST'])
 def deliverN(n):
     n = int(n)
-    while n > 0:
+    delivered = 0
+    while delivered < n:
         if (queues):
             earliest_key = list(queues.keys())[0]
             earliest_counter = message_counter
@@ -88,14 +89,25 @@ def deliverN(n):
                         earliest_key = key
             q = queues[earliest_key]
             if (q):
-                earliest_msg = q.popleft()[1]
-                deliverMessage(earliest_msg["payload"], earliest_msg["from"], earliest_msg["to"])
-                n -= 1
+                id, earliest_msg = q.popleft()
+                try:
+                    deliverMessage(earliest_msg["payload"], earliest_msg["from"], earliest_msg["to"])
+                    delivered += 1
+                except:
+                    q.appendleft((id, earliest_msg))
+                    d_error = "deliver failed on message {}".format(id)
+                    print(d_error)
+                    return jsonify({"messages": listMessages(), "delivered": d_error})
             else:
                 break
         else:
             break
-    return jsonify({"messages": listMessages(), "delivered": "ok"})
+    return jsonify({"messages": listMessages(), "delivered": "delivered {} out of {} messages".format(delivered, n)})
+
+
+@app.route("/messages/deliver/one/<id>", methods=['POST'])
+def deliverOne(id):
+    pass
 
 
 @app.route("/messages/deliver/each_pair/<n>", methods=['POST'])
