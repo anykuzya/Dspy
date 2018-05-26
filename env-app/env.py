@@ -66,7 +66,7 @@ def findById(id):
         for key in queues:
             res = findByIdAndKey(id, key)
             if res is not None:
-                return key, res
+                return res, key
 
     print("no message with" + id)
     return None, None
@@ -105,7 +105,9 @@ def deliverN_each_pair(n):
 
 @app.route("/messages/drop/<id>", methods=['POST'])
 def removeMessage(id):
-    pass
+    msg, key = findById(id)
+    queues[key].remove(msg)
+    return jsonify({"messages": listMessages()})
 
 
 @app.route("/messages/reorder/<id1>_<id2>", methods=['POST'])
