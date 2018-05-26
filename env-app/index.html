@@ -6,13 +6,16 @@
 </head>
 <body>
 <div id="queue">
-        <div v-for="pair in responce">
+        <div v-for="pair in messages">
             {{pair["from"]}} <==> {{pair["to"]}}
             <p v-for="msg in pair.messages">
                 id: {{msg[0]}},
                 msg: {{msg[1]["payload"]}}
             </p>
         </div>
+        <p v-if="show_deliver_response">
+            delivered: {{deliver_response}}
+        </p>
         <p>
             <input type="button" @click="deliver" value="deliver">
         </p>
@@ -25,7 +28,9 @@
 const queue = new Vue({
     el: "#queue",
     data: {
-        responce: []
+        messages: [],
+        show_deliver_response: false,
+        deliver_response: ""
     },
     created() {
         axios.get("/messages")
@@ -36,19 +41,22 @@ const queue = new Vue({
                     })
     },
     methods: {
-        _onResponce({data: {responce, error}}) {
+        _onResponce({data: {messages, error}}) {
             if (error) {
                 alert(error);
                 return;
             }
-            this.responce = responce;
+            this.messages = messages;
         },
-        _onDelivered({data: {answer, error}}) {
+        _onDelivered({data: {messages, delivered, error}}) {
+            console.log(messages, delivered)
             if (error) {
                 alert(error);
                 return;
             }
-
+            this.messages = messages;
+            this.show_deliver_response = true;
+            this.deliver_response = delivered;
         },
         deliver() {
             axios.post("/messages/deliver/10")

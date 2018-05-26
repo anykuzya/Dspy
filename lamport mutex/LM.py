@@ -38,7 +38,6 @@ class LamportMutex:
         self.waiting_acknowledgments_from = {id for id in self.ids}
         # wait for acknowledges and our mes is first in reqQueue
         while (not (len(self.waiting_acknowledgments_from) == 0
-               and self.is_granted == False
                and self.requests_queue[0][1] == self.id)):
             pass
             # self.handle_message()
@@ -61,19 +60,18 @@ class LamportMutex:
 
     def handle_request(self, message):
         self.put_to_request_queue(message["time"], message["from"])
-        self.tick = max(self.tick, message["time"]) + 1
         answer = {"time": self.tick, "from": self.id, "type": ACK}
         self.send(answer, message["from"])
 
     def handle_release(self, message):
         self.delete_from_requests_queue(message["from"])
-        self.tick = max(self.tick, message["time"]) + 1
 
     def handle_ack(self, message):
         self.waiting_acknowledgments_from.remove(message["from"])
 
     def handle_message(self):
         message = self.messages_queue.get()
+        self.tick = max(self.tick, message["time"]) + 1
         if message["type"] == REQUEST:
             self.handle_request(message)
         elif message["type"] == RELEASE:

@@ -31,10 +31,12 @@ def main_page():
     return send_file('index.html')
 
 
+def listMessages():
+    return [{"from": x[0], "to": x[1], "messages": list(queues[x])} for x in queues]
+
 @app.route("/messages", methods=['GET'])
 def getMessages():
-    messages = [{"from": x[0], "to": x[1], "messages": list(queues[x])} for x in queues]
-    return jsonify({"responce": messages})
+    return jsonify({"messages": listMessages()})
 
 def dq_at(dq, i):
     for e in dq:
@@ -46,7 +48,28 @@ def dq_at(dq, i):
 
 
 def deliverMessage(msg, sender, reciever):
-    requests.post(reciever, msg)
+    requests.post(reciever, json=msg)
+
+def findByIdAndKey(id, key):
+    try:
+        q = queues[key]
+        for msg in q:
+            if msg[0] == id:
+                return msg
+    except():
+        return None
+
+#returns Key in queues and pair (id, msg)
+def findById(id):
+    if (queues):
+        id = int(id)
+        for key in queues:
+            res = findByIdAndKey(id, key)
+            if res is not None:
+                return key, res
+
+    print("no message with" + id)
+    return None, None
 
 
 @app.route("/messages/deliver/<n>", methods=['POST'])
@@ -72,7 +95,7 @@ def deliverN(n):
                 break
         else:
             break
-    return getMessages()
+    return jsonify({"messages": listMessages(), "delivered": "ok"})
 
 
 @app.route("/messages/deliver/each_pair/<n>", methods=['POST'])
