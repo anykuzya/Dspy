@@ -12,6 +12,7 @@
                 id: {{msg[0]}},
                 msg: {{msg[1]["payload"]}}
                 <input type="button" @click="drop(msg[0])" value="x">
+                <input type="button" @click="deliver_one(msg[0])" value="=>">
             </p>
         </div>
         <p v-if="show_deliver_response">
@@ -83,7 +84,7 @@ const queue = new Vue({
                     })
         },
         deliver_one(id) {
-            axios.post("/messages/deliver/" + id)
+            axios.post("/messages/deliver_one/" + id)
                 .then(this._onDelivered)
                 .catch(error => {
                         console.log("Error occurred ", error);

@@ -105,9 +105,18 @@ def deliverN(n):
     return jsonify({"messages": listMessages(), "delivered": "delivered {} out of {} messages".format(delivered, n)})
 
 
-@app.route("/messages/deliver/one/<id>", methods=['POST'])
+@app.route("/messages/deliver_one/<id>", methods=['POST'])
 def deliverOne(id):
-    pass
+    msg, key = findById(id)
+    try:
+        deliverMessage(msg["payload"], msg["from"], msg["to"])
+    except:
+        d_error = "deliver failed on message {}".format(id)
+        return jsonify({"messages": listMessages(), "delivered": d_error})
+    queues[key].remove((id, msg))
+    return jsonify({"messages": listMessages(), "delivered": "message {} has been delivered".format(id)})
+
+
 
 
 @app.route("/messages/deliver/each_pair/<n>", methods=['POST'])
@@ -124,7 +133,16 @@ def removeMessage(id):
 
 @app.route("/messages/reorder/<id1>_<id2>", methods=['POST'])
 def reorderMessage(id1, id2):
-    pass
+    error = ""
+    msg1, key = findById(id1)
+    if (key):
+        msg2 = findByIdAndKey(id2, key)
+        if msg2:
+            pass
+        else:
+            error = "no message with {}\n or id2 and id2 are in different queues and you cannon reorder them".format(id2)
+    else:
+      error = "no message with {}".format(id1)
 
 if __name__ == '__main__':
     app.run()
